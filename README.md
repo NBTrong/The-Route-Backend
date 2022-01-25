@@ -32,7 +32,7 @@ Trên Windows, cài Docker Desktop Installer theo link này: https://www.docker.
 
 4. `docker-compose run --rm composer install`
 
-5. `docker-compose run --rm artisan migrate` 
+5. `docker-compose run --rm artisan migrate --seed` 
 
 6. Vào localhost:8080 để check đã được chưa.
 
