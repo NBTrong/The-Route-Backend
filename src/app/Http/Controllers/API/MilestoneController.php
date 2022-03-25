@@ -4,10 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Roadmap;
 use App\Models\Milestone;
 use Exception;
-use Facade\FlareClient\Http\Exception\NotFound;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,7 +21,7 @@ class MilestoneController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(User $user)
+    public function index(Auth $user)
     {
         $milestones = $user->milestones;
         return response()->json(
@@ -44,7 +42,6 @@ class MilestoneController extends Controller
      */
     public function store(Request $request)
     {
-        //
         $user = Auth::user();
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100|min:3',
@@ -97,7 +94,7 @@ class MilestoneController extends Controller
         //
         $user = Auth::user();
 
-        $milestone = $user->milestones()->find($id);
+        $milestone = $user->milestones->find($id);
 
         if(!$milestone){
             return response()->json([
@@ -106,25 +103,13 @@ class MilestoneController extends Controller
                 'message' => 'Milestone not found'
             ], 404);
         } else {
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:100|min:1',
-                'description' => 'required|string|max:500',
-                'start_date' => 'required|date|date_format:Y-m-d|beforeOrEqual:end_date',
-                'end_date' => 'required|date|date_format:Y-m-d|afterOrEqual:start_date',
-                'type' => 'required|string|in:date,month,year',
-            ]);
-
-            if($validator->fails()){
-                return $this->validationErrors($validator->errors());
-            }
-
             try{
                 $milestone->update([
-                    'name' => $request->name,
-                    'description' => $request->description,
-                    'start_date' => $request->start_date,
-                    'end_date' => $request->end_date,
-                    'type' => $request->type
+                    'name' => $request->name ? $request->name : $milestone->name,
+                    'description' => $request->description ? $request->description : $milestone->description,
+                    'start_date' => $request->start_date ? $request->start_date : $milestone->start_date,
+                    'end_date' => $request->end_date ? $request->end_date : $milestone->end_date,
+                    'type' => $request->type ? $request->type : $milestone->type
                 ]);
                 return response()->json([
                     'status' => 'success',
@@ -153,7 +138,7 @@ class MilestoneController extends Controller
     {
         //
         $user = Auth::user();
-        $milestone = $user->milestones()->find($id);
+        $milestone = $user->milestones->find($id);
         if(!$milestone){
             return response()->json([
                 'status' => 'error',

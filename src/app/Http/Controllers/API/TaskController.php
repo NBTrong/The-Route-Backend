@@ -17,7 +17,7 @@ class TaskController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(User $user)
+    public function index(Auth $user)
     {
         if($user->id != Auth::user()->id){
             return response()->json(
@@ -110,42 +110,27 @@ class TaskController extends Controller
                 'message' => 'Task not found'
             ], 404);
         } else {
-            $validator = Validator::make($request->all(), [
-                'roadmap_id' => 'required|integer|exists:roadmaps,id|in:'.$user->roadmaps->pluck('id')->implode(','),
-                'milestone_id' => 'required|integer|exists:milestones,id|in:'.$user->milestones->pluck('id')->implode(','),
-                'content' => 'required|string|max:100|min:1',
-                'start_date' => 'required|date|date_format:Y-m-d|beforeOrEqual:end_date',
-                'end_date' => 'required|date|date_format:Y-m-d|afterOrEqual:start_date',
-                'completed' => 'required|boolean',
-            ]);
-
-            if ($validator->fails()) {
-                return $this->validationErrors($validator->errors());
-            }
-
             try {
                 $task->update([
-                    'roadmap_id' => $request->roadmap_id,
-                    'milestone_id' => $request->milestone_id,
-                    'user_id' => $user->id,
-                    'content' => $request->content,
-                    'start_date' => $request->start_date,
-                    'end_date' => $request->end_date,
-                    'completed' => $request->completed,
-                    'note' => $request->note
+                    'content' => $request->content ? $request->content : $task->content,
+                    'start_date' => $request->start_date ? $request->start_date : $task->start_date,
+                    'end_date' => $request->end_date ? $request->end_date : $task->end_date,
+                    'completed' => $request->completed === null ? $task->completed : $request->completed,
+                    'note' => $request->note ? $request->note : $task->note
                 ]);
 
                 return response()->json([
                     'status' => 'success',
                     'error' => false,
                     'message' => 'Task updated successfully',
-                    'task' => $task
+                    'task' => $task,
                 ], 200);
             } catch (Exception $e) {
                 return response()->json([
                     'status' => 'error',
                     'error' => true,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
+                    'task' => $request->completed
                 ], 404);
             }
         }
